@@ -48,7 +48,8 @@ potentialOutliers = aggregate(Corr ~ ID * Memory * TypeOfChange, data, mean)
 
 ggplot(potentialOutliers, aes(Corr, Memory, TypeOfChange, colour=ID)) + 
   geom_line() + 
-  geom_point()
+  geom_point() +
+  geom_text(aes(label=ifelse(Corr<.55 | Corr>= 0.95,as.character(ID),'')),hjust=0,vjust=1.5)
 # ANOVA
 
 summary(aov(Corr ~ Error(ID) + TypeOfChange*Memory * PAS, data))
