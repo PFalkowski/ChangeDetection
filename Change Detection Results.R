@@ -21,7 +21,7 @@ library(rio)
 library(lmtest)
 
 
-options(max.print = 100)
+options(max.print = 1000)
 
 # read data
 
@@ -30,40 +30,32 @@ data <- read.csv("CD_ex3_RAWdata - BetweenSubject.csv", header = TRUE)
 
 # validate
 
-nrow(data)
-ncol(data)
-str(data)
-head(data)
-tail(data)
+#str(data)
 
-BetweenSubjectTrials = aggregate(ID ~ Memory, data, length)
-BetweenSubjectTrials 
+TrialsByCondition = aggregate(ID ~ TypeOfChange * Memory, data, length)
+TrialsByCondition
 
-WithinSubjectTrials = aggregate(ID ~ TypeOfChange, data, length)
-WithinSubjectTrials 
+IDbyCorr = aggregate(Corr ~ ID, data, mean)
+dotplot(ID ~ Corr, IDbyCorr)
 
-res = aggregate(Corr ~ ID, data, length)
-plot(sort(res$Corr))
+PASbyID = aggregate(PAS ~ ID, data, mean)
+dotplot(ID ~ PAS, PASbyID)
 
-res = aggregate(Corr ~ ID, data, mean)
-dotplot(ID ~ Corr, res)
+# Outliers
 
-res = aggregate(PAS ~ ID, data, mean)
-dotplot(ID ~ PAS, res)
+potentialOutliers = aggregate(Corr ~ ID * Memory * TypeOfChange, data, mean)
 
-# handle outliers
 
-data$macc = aggregate.expand(data$Corr, data$ID)
-potentialOutliers = data[data$macc < .5,]
-nrow(potentialOutliers)
-
+ggplot(potentialOutliers, aes(Corr, Memory, TypeOfChange, colour=ID)) + 
+  geom_line() + 
+  geom_point()
 # ANOVA
 
-summary(aov(Corr ~ Error(ID) + (TypeOfChange*Memory) * PAS, data))
+summary(aov(Corr ~ Error(ID) + TypeOfChange*Memory * PAS, data))
 
 # GLMM
 
-mf = glmer(Corr ~ (1|ID) * TypeOfChange * Memory * PAS, 
+mf = glmer(Corr ~ (1|ID) * (TypeOfChange * Memory * PAS, 
                     data, 
                     family = binomial, 
                     control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
