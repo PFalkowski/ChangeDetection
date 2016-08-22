@@ -11,7 +11,7 @@ packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest")
 new.packages <- packages.needed[!(packages.needed %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, repos='http://r.meteo.uni.wroc.pl/')
 
-
+library(scales)
 library(zoo)
 library(Matrix)
 library(lme4)
@@ -28,6 +28,11 @@ options(max.print = 1000)
 setwd("..\\OneDrive\\Repos\\Change Detection")
 data <- read.csv("CD_ex3_RAWdata - BetweenSubject.csv", header = TRUE)
 
+# add variables
+ScaleMin = 0
+ScaleMax = 1
+data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
+
 # validate
 
 #str(data)
@@ -43,7 +48,7 @@ dotplot(ID ~ PAS, PASbyID)
 
 # Get Outliers
 lowerBoundOutlier = .5
-upperBoundOutlier = 0.95
+upperBoundOutlier = 0.9
 CorrByConditionID = aggregate(Corr ~ ID + Memory + TypeOfChange, data, mean)
 
 
@@ -63,7 +68,7 @@ summary(aov(Corr ~ Error(ID) + TypeOfChange*Memory * PAS, data))
 
 # GLMM
 
-mf = glmer(Corr ~ (1|ID) * TypeOfChange * Memory * PAS, 
+mf = glmer(Setsize ~ (1|ID) * TypeOfChange * Memory * PAS , 
                     data, 
                     family = binomial, 
                     control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
