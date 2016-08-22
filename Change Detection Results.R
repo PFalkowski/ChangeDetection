@@ -41,22 +41,29 @@ dotplot(ID ~ Corr, IDbyCorr)
 PASbyID = aggregate(PAS ~ ID, data, mean)
 dotplot(ID ~ PAS, PASbyID)
 
-# Outliers
-
+# Get Outliers
+lowerBoundOutlier = .5
+upperBoundOutlier = 0.95
 CorrByConditionID = aggregate(Corr ~ ID + Memory + TypeOfChange, data, mean)
 
 
 ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
-  geom_text(aes(label=ifelse(Corr<=.50 | Corr>= 0.95,as.character(ID),'')),hjust=0,vjust=1.5)
+  geom_text(aes(label=ifelse(Corr<=lowerBoundOutlier | Corr>= upperBoundOutlier,as.character(ID),'')),hjust=0,vjust=1.5)
+
+
+# Remove Outliers
+outliersIDs = CorrByConditionID[CorrByConditionID$Corr <= lowerBoundOutlier | CorrByConditionID$Corr >= upperBoundOutlier, ]
+data = data[!(is.element(data$ID, outliersIDs$ID)),]
+
 # ANOVA
 
 summary(aov(Corr ~ Error(ID) + TypeOfChange*Memory * PAS, data))
 
 # GLMM
 
-mf = glmer(Corr ~ (1|ID) * (TypeOfChange * Memory) * PAS, 
+mf = glmer(Corr ~ (1|ID) * TypeOfChange * Memory * PAS, 
                     data, 
                     family = binomial, 
                     control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
