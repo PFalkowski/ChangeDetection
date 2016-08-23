@@ -28,11 +28,13 @@ options(max.print = 1000)
 setwd("..\\OneDrive\\Repos\\Change Detection")
 data <- read.csv("CD_ex3_RAWdata - BetweenSubject.csv", header = TRUE)
 
-# add scaled variables
+# add variables
 ScaleMin = 0
 ScaleMax = 1
 data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
 data$ScaledSetsize = rescale(data$Setsize, to=c(ScaleMin, ScaleMax))
+data$PositionRatio <-data$TargetPos / data$Setsize
+
 
 # validate
 
@@ -51,8 +53,6 @@ dotplot(ID ~ PAS, PASbyID)
 lowerBoundOutlier = .5
 upperBoundOutlier = 0.95
 CorrByConditionID = aggregate(Corr ~ ID + Memory + TypeOfChange, data, mean)
-
-
 ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
@@ -66,11 +66,11 @@ data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
 # ANOVA
 
-summary(aov(Corr ~ Error(ID) + TypeOfChange*Memory * PAS, data))
+summary(aov(ScaledSetsize ~ Error(ID) + TypeOfChange*Memory * PAS, data))
 
 # GLMM
 
-mf = glmer(ScaledSetsize ~ (1|ID) * TypeOfChange * Memory * PAS, 
+mf = glmer(ScaledSetsize ~ (TypeOfChange * Memory) * PAS *  (1|ID) , 
                     data, 
                     family = binomial, 
                     control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
