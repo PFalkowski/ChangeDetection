@@ -1,10 +1,3 @@
-# functions
-aggregate.expand = function(dv, f, fun = mean){
-    res = aggregate(dv ~ f, FUN = fun)
-    rownames(res) = as.character(res[,1])
-    return(res[as.character(f), 2])
-}
-
 # configure R environment
 
 packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
@@ -27,7 +20,7 @@ options(max.print = 1000)
 # read data
 
 setwd("..\\OneDrive\\Repos\\Change Detection\\Data")
-data <- read.csv("CD_ex3_RAWdata - Long.csv", header = TRUE)
+data <- read.csv("CD_ex2_data_140t_25Ps.xlsx - CD_ex2_RAW.csv", header = TRUE)
 
 # add variables
 ScaleMin = 0
@@ -69,7 +62,7 @@ summary(aov(ScaledSetsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
 
 # GLMM
 
-mf = glmer(Corr ~ TypeOfChange * Memory * PAS * (1|TrialsOrder) * (1|ID) , 
+mf = glmer(Corr ~ ConditionRecoded * PAS * (1|TrialsOrder) * (1|ID) , 
                     data, 
                     family = binomial, nAGQ = 0)
 summary(mf)
