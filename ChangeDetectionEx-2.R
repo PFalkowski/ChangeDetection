@@ -7,7 +7,7 @@ aggregate.expand = function(dv, f, fun = mean){
 
 # configure R environment
 
-packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest")
+packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
 new.packages <- packages.needed[!(packages.needed %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, repos='http://r.meteo.uni.wroc.pl/')
 
@@ -19,14 +19,15 @@ library(ggplot2)
 library(lattice)
 library(rio)
 library(lmtest)
+library(rms)
 
 
 options(max.print = 1000)
 
 # read data
 
-setwd("..\\OneDrive\\Repos\\Change Detection")
-data <- read.csv("CD_ex3_RAWdata - BetweenSubject.csv", header = TRUE)
+setwd("..\\OneDrive\\Repos\\Change Detection\\Data")
+data <- read.csv("CD_ex3_RAWdata - Long.csv", header = TRUE)
 
 # add variables
 ScaleMin = 0
@@ -34,7 +35,6 @@ ScaleMax = 1
 data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
 data$ScaledSetsize = rescale(data$Setsize, to=c(ScaleMin, ScaleMax))
 data$PositionRatio <-data$TargetPos / data$Setsize
-
 
 # validate
 
@@ -63,16 +63,33 @@ ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) +
 outliersIDs = CorrByConditionID[CorrByConditionID$Corr <= lowerBoundOutlier | CorrByConditionID$Corr >= upperBoundOutlier, ]
 data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
-
 # ANOVA
 
-summary(aov(ScaledSetsize ~ Error(ID) + TypeOfChange*Memory * PAS, data))
+summary(aov(ScaledSetsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
 
 # GLMM
 
-mf = glmer(ScaledSetsize ~ (TypeOfChange * Memory) * PAS *  (1|ID) , 
+mf = glmer(Corr ~ TypeOfChange * Memory * PAS * (1|TrialsOrder) * (1|ID) , 
                     data, 
-                    family = binomial, 
-                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+                    family = binomial, nAGQ = 0)
 summary(mf)
 
+# Ordered logit
+attach(data)
+X <- cbind(Setsize)
+Y <- cbind(TypeOfChange, Memory, PAS, ID)
+Xvar <- c("Type of change", "Memory", "PAS")
+
+
+summary(X)
+summary(Y)
+
+table(Y)
+ddist <- datadist(Xvar)
+options(datadist = 'ddist')
+
+ologit <- lrm(X ~ Y)
+print(ologit)
+
+fitted <- predict(ologit, newdata = data, type = "fitted.ind")
+colMeans(fitted)
