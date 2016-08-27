@@ -1,25 +1,12 @@
 # configure R environment
-
-packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
-new.packages <- packages.needed[!(packages.needed %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages, repos='http://r.meteo.uni.wroc.pl/')
-
-library(scales)
-library(zoo)
-library(Matrix)
-library(lme4)
-library(ggplot2)
-library(lattice)
-library(rio)
-library(lmtest)
-library(rms)
-
-
-options(max.print = 1000)
+source("../OneDrive/Repos/Change Detection/Helper.R")
+Packages = c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
+WorkingDirectory = "../OneDrive/Repos/Change Detection/Data"
+# WorkingDirectory = "..\\OneDrive\\Repos\\Change Detection\\Data"
+SetupEnvironment(workingDirectory = WorkingDirectory, requiredPackages = Packages)
 
 # read data
 
-setwd("..\\OneDrive\\Repos\\Change Detection\\Data")
 data <- read.csv("CD_ex2_data_140t_25Ps.xlsx - CD_ex2_RAW.csv", header = TRUE)
 
 # add variables

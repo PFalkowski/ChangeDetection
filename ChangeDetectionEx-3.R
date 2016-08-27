@@ -1,34 +1,11 @@
-# functions
-aggregate.expand = function(dv, f, fun = mean){
-    res = aggregate(dv ~ f, FUN = fun)
-    rownames(res) = as.character(res[,1])
-    return(res[as.character(f), 2])
-}
-
 # configure R environment
-
-packages.needed <- c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms", "car")
-new.packages <- packages.needed[!(packages.needed %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages, repos='http://r.meteo.uni.wroc.pl/')
-
-library(car)
-library(scales)
-library(zoo)
-library(Matrix)
-library(lme4)
-library(ggplot2)
-library(lattice)
-library(rio)
-library(lmtest)
-library(rms)
-library(plyr)
-
-
-options(max.print = 1000)
+source("../OneDrive/Repos/Change Detection/Helper.R")
+Packages = c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
+WorkingDirectory = "../OneDrive/Repos/Change Detection/Data"
+SetupEnvironment(workingDirectory = WorkingDirectory, requiredPackages = Packages)
 
 # read data
 
-setwd("..\\OneDrive\\Repos\\Change Detection\\Data")
 data <- read.csv("CD_ex3_RAWdata - Long.csv", header = TRUE)
 
 # add variables
