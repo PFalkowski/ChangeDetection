@@ -1,10 +1,9 @@
 SetupEnvironment <- function(workingDirectory, requiredPackages) 
 {
+  options(max.print = 1000)
   GetPackages(requiredPackages)
   RequirePackages(requiredPackages)
   SetWorkingDirectory(workingDirectory)
-  
-  options(max.print = 1000)
 }
 
 GetPackages <- function(PackageNames, repo = 'http://r.meteo.uni.wroc.pl/')
@@ -26,4 +25,14 @@ SetWorkingDirectory <- function(path)
   {
     setwd(path)
   }
+}
+
+# http://stackoverflow.com/a/4788102/3922292
+RemoveOutliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < (qnt[1] - H)] <- NA
+  y[x > (qnt[2] + H)] <- NA
+  y
 }

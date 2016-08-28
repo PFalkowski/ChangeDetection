@@ -1,38 +1,40 @@
 # configure R environment
 source("../OneDrive/Repos/Change Detection/Helper.R")
+#source("../Helper.R")
 Packages = c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms")
 WorkingDirectory = "../OneDrive/Repos/Change Detection/Data"
-# WorkingDirectory = "..\\OneDrive\\Repos\\Change Detection\\Data"
 SetupEnvironment(workingDirectory = WorkingDirectory, requiredPackages = Packages)
 
 # read data
 
-data <- read.csv("CD_ex2_data_140t_25Ps.xlsx - CD_ex2_RAW.csv", header = TRUE)
+data2 <- read.csv("CD_ex2_data_140t_25Ps.xlsx - CD_ex2_RAW.csv", header = TRUE)
 
 # add variables
+
 ScaleMin = 0
 ScaleMax = 1
-data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
-data$ScaledSetsize = rescale(data$Setsize, to=c(ScaleMin, ScaleMax))
-data$PositionRatio <-data$TargetPos / data$Setsize
+data2$ScaledPAS = rescale(data2$PAS, to=c(ScaleMin, ScaleMax))
+data2$PositionRadians <-data2$TargetPos / 8
 
 # validate
 
-#str(data)
+#str(data2)
 
-TrialsByCondition = aggregate(ID ~ TypeOfChange * Memory, data, length)
+TrialsByCondition = aggregate(Trial ~ TypeOfChange, data2, length)
 TrialsByCondition
 
-IDbyCorr = aggregate(Corr ~ ID, data, mean)
+IDbyCorr = aggregate(Corr ~ ID, data2, mean)
 dotplot(ID ~ Corr, IDbyCorr)
 
-PASbyID = aggregate(PAS ~ ID, data, mean)
+PASbyID = aggregate(PAS ~ ID, data2, mean)
 dotplot(ID ~ PAS, PASbyID)
 
 # Get Outliers
+CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
+outliers = RemoveOutliers(CorrByConditionID$Corr)
 lowerBoundOutlier = .5
 upperBoundOutlier = 0.95
-CorrByConditionID = aggregate(Corr ~ ID + Memory + TypeOfChange, data, mean)
+CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
 ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
@@ -41,35 +43,16 @@ ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) +
 
 # Remove Outliers
 outliersIDs = CorrByConditionID[CorrByConditionID$Corr <= lowerBoundOutlier | CorrByConditionID$Corr >= upperBoundOutlier, ]
-data = data[!(is.element(data$ID, outliersIDs$ID)),]
+data2 = data2[!(is.element(data2$ID, outliersIDs$ID)),]
 
 # ANOVA
 
-summary(aov(ScaledSetsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
+summary(aov(Corr ~ TypeOfChange * PAS + Error(ID), data2))
 
 # GLMM
 
-mf = glmer(Corr ~ ConditionRecoded * PAS * (1|TrialsOrder) * (1|ID) , 
-                    data, 
+mf = glmer(Corr ~ TypeOfChange * PAS * (1|ID) * (1|TargetPos) * (1|Trial), 
+                    data2, 
                     family = binomial, nAGQ = 0)
 summary(mf)
 
-# Ordered logit
-attach(data)
-X <- cbind(Setsize)
-Y <- cbind(TypeOfChange, Memory, PAS, ID)
-Xvar <- c("Type of change", "Memory", "PAS")
-
-
-summary(X)
-summary(Y)
-
-table(Y)
-ddist <- datadist(Xvar)
-options(datadist = 'ddist')
-
-ologit <- lrm(X ~ Y)
-print(ologit)
-
-fitted <- predict(ologit, newdata = data, type = "fitted.ind")
-colMeans(fitted)

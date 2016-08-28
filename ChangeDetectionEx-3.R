@@ -13,19 +13,6 @@ ScaleMin = 0
 ScaleMax = 1
 data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
 data$ScaledSetsize = rescale(data$Setsize, to=c(ScaleMin, ScaleMax))
-#data$PositionRatio <-data$TargetPos / data$Setsize
-
-#attach(data)
-#data$ConditionRecoded[Condition == 1 & WorkingMemory == 0] <- "CategoryChangeIM"
-#data$ConditionRecoded[Condition == 2 & WorkingMemory == 0] <- "CategoryNoChangeIM"
-#data$ConditionRecoded[Condition == 3 & WorkingMemory == 0] <- "StateChangeIM"
-#data$ConditionRecoded[Condition == 4 & WorkingMemory == 0] <- "StateNoChangeIM"
-#data$ConditionRecoded[Condition == 1 & WorkingMemory == 1] <- "CategoryChangeWM"
-#data$ConditionRecoded[Condition == 2 & WorkingMemory == 1] <- "CategoryNoChangeWM"
-#data$ConditionRecoded[Condition == 3 & WorkingMemory == 1] <- "StateChangeWM"
-#data$ConditionRecoded[Condition == 4 & WorkingMemory == 1] <- "StateNoChangeWM"
-#detach(data)
-# validate
 
 #str(data)
 
@@ -116,23 +103,3 @@ ggplot(res, aes(x = Corr, y = fit, group = TypeOfChange,
                 color = TypeOfChange)) + geom_line() 
 
 
-# Ordered logit
-attach(data)
-X <- cbind(Setsize)
-Y <- cbind(TypeOfChange, Memory, PAS, ID)
-Xvar <- c("Type of change", "Memory", "PAS")
-
-
-summary(X)
-summary(Y)
-
-table(Y)
-ddist <- datadist(Xvar)
-options(datadist = 'ddist')
-
-ologit <- lrm(X ~ Y)
-print(ologit)
-
-fitted <- predict(ologit, newdata = data, type = "fitted.ind")
-colMeans(fitted)
-detach(data)
