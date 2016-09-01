@@ -37,18 +37,27 @@ dotplot(Setsize ~ RecodedCondition, RecodedConditionbySetsize)
 
 # Get Outliers
 lowerBoundOutlier = .5
-upperBoundOutlier = 0.95
-CorrByConditionID = aggregate(Corr ~ ID + Memory + TypeOfChange, data, mean)
-ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) + 
+upperBoundOutlier = 1
+CorrByConditionID = aggregate(Corr ~ ID * Memory * BlockType, data, mean)
+ggplot(CorrByConditionID, aes(Corr, BlockType, Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
-  geom_text(aes(label=ifelse(Corr<=lowerBoundOutlier | Corr>= upperBoundOutlier,as.character(ID),'')),hjust=0,vjust=1.5)
+  geom_text(aes(label=ifelse(Corr<lowerBoundOutlier | Corr> upperBoundOutlier,as.character(ID),'')),hjust=0,vjust=1.5)
 
 
 # Remove Outliers
 outliersIDs = CorrByConditionID[CorrByConditionID$Corr <= lowerBoundOutlier | CorrByConditionID$Corr >= upperBoundOutlier, ]
 data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
+# prepare the data with only conditions of interest
+
+onlyChange = data[data$TypeOfChange != "NoChange",]
+TwoByTwo = glmer(Corr ~ Memory * TypeOfChange * PAS * (1|ID) * (1|TargetRadians) * (1|Trial) , 
+                 onlyChange, 
+                   family = binomial,
+                   control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+
+summary(TwoByTwo)
 # ANOVA
 
 summary(aov(Setsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
@@ -57,7 +66,8 @@ summary(aov(Setsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
 
 ThreeByTwo = glmer(Corr ~ Memory * TypeOfChange  * PAS  * (1|ID) * (1|TargetRadians) * (1|Trial) , 
            data, 
-           family = binomial)
+           family = binomial,
+           control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
 FourByTwo = glmer(Corr ~ Memory * ConditionRecoded  * PAS  * (1|ID) * (1|TargetRadians) * (1|Trial) , 
                     data, 
@@ -70,6 +80,7 @@ TwoByTwo = glmer(Corr ~ Memory * ChangeOccured * BlockType * PAS  * (1|ID) * (1|
                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
 summary(FourByTwo)
+summary(ThreeByTwo)
 summary(TwoByTwo)
 
 # Results charting

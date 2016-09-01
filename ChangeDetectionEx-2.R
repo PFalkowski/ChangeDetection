@@ -31,7 +31,7 @@ dotplot(ID ~ PAS, PASbyID)
 
 # Get Outliers
 CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
-outliers = RemoveOutliers(CorrByConditionID$Corr)
+#outliers = RemoveOutliers(CorrByConditionID$Corr)
 lowerBoundOutlier = .5
 upperBoundOutlier = 0.95
 CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
