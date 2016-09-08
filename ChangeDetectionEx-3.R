@@ -14,8 +14,16 @@ ScaleMax = 1
 data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
 data$ScaledSetsize = rescale(data$Setsize, to=c(ScaleMin, ScaleMax))
 
-#str(data)
 
+# validate
+#str(data)
+NaNsFound = aggregate(Response ~ ID, data, length)
+TrialsPerConditionPerID = aggregate(Response ~ ID * ConditionRecoded * Memory, data, length)
+ResponseBias = aggregate(Response ~ ID * ConditionRecoded * Memory, data, mean)
+ResponseBias = aggregate(Corr ~ ID * ConditionRecoded * Memory, data, mean)
+  
+  
+  
 TrialsByCondition = aggregate(Corr ~ TypeOfChange * Memory, data, mean)
 TrialsByCondition
 dotplot(Corr ~ TypeOfChange + Memory, TrialsByCondition)
@@ -35,24 +43,39 @@ dotplot(Corr ~ ConditionRecoded, RecodedConditionbyCorr)
 RecodedConditionbySetsize = aggregate(Setsize ~ RecodedCondition, data, mean)
 dotplot(Setsize ~ RecodedCondition, RecodedConditionbySetsize)
 
-# Get Outliers
-lowerBoundOutlier = .5
+# Analize erroneus responses
+
+lowerBoundOutlier = .25
 upperBoundOutlier = 1
-CorrByConditionID = aggregate(Corr ~ ID * Memory * BlockType, data, mean)
-ggplot(CorrByConditionID, aes(Corr, BlockType, Memory, colour=ID)) + 
+
+CorrByConditionID = aggregate(Corr ~ ID * ConditionRecoded * Memory, data, mean)
+outliersIDs = CorrByConditionID[CorrByConditionID$Corr < lowerBoundOutlier | CorrByConditionID$Corr > upperBoundOutlier, ]
+outliersData = data[(is.element(data$ID, outliersIDs$ID)),]
+outliersAnalysis = aggregate(Corr ~ ConditionRecoded * Memory * ID, outliersData, mean)
+
+dotplot(Corr ~ ConditionRecoded , outliersAnalysis)
+# Get Outliers
+
+ggplot(CorrByConditionID, aes(Corr,  Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
   geom_text(aes(label=ifelse(Corr<lowerBoundOutlier | Corr> upperBoundOutlier,as.character(ID),'')),hjust=0,vjust=1.5)
 
-
 # Remove Outliers
-outliersIDs = CorrByConditionID[CorrByConditionID$Corr <= lowerBoundOutlier | CorrByConditionID$Corr >= upperBoundOutlier, ]
+
+data = data[!(is.element(data$ID, outliersIDs$ID)),]
+
+# Or remove only erroneus conditions for ID
+
 data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
 # prepare the data with only conditions of interest
 
 onlyChange = data[data$TypeOfChange != "NoChange",]
-TwoByTwo = glmer(Corr ~ Memory * TypeOfChange * PAS * (1|ID) * (1|TargetRadians) * (1|Trial) , 
+
+# GLMM
+
+TwoByTwo = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID), 
                  onlyChange, 
                    family = binomial,
                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
