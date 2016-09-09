@@ -18,7 +18,7 @@ data2$PositionRadians <-data2$TargetPos / 8
 
 responseBias <- aggregate(Response ~ ID, data, mean)
 
-lowerBoundOutlier = .3
+lowerBoundOutlier = .25
 upperBoundOutlier = 1
 
 CorrByConditionID = aggregate(Corr ~ ID * ConditionRecoded * Memory, data, mean)
@@ -36,65 +36,46 @@ ggplot(CorrByConditionID, aes(Corr,  Memory, colour=ID)) +
 
 data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
-# prepare the data with only conditions of interest
-
-onlyChange = data[data$TypeOfChange != "NoChange",]
 
 # GLMM
-x <- sample(12)
-set.seed(77777777)
-TwoByTwo = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID)+ (1|TargetRadians), 
-                 onlyChange, 
+
+TwoByTwo = glmer(Corr ~  Memory * BlockType *  PAS  * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+                 data, 
                    family = binomial,
                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-summary(TwoByTwo)
-
-TwoByTwoPlus = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID) + (1|TargetRadians), 
-                 onlyChange, 
-                 family = binomial,
-                 control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
-
-TwoByTwoPlusOrder = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID) + (1|TrialsOrder), 
-                          onlyChange, 
-                          family = binomial,
-                          control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
-
-TwoByTwoPlusTrials = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID) + (1|Trial), 
-                          onlyChange, 
-                          family = binomial,
-                          control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
-
-
-
-anova(FourByTwo, ThreeByTwo)
-# ANOVA
-
-summary(aov(Setsize ~ TypeOfChange * Memory * PAS + Error(ID), data))
-
-# GLMM
-
-ThreeByTwo = glmer(Corr ~ Memory * TypeOfChange  * PAS  * (1|ID)  , 
-           data, 
-           family = binomial,
-           control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
-
-FourByTwo = glmer(Corr ~ Memory * ConditionRecoded  * PAS  * (1|ID)  , 
-                    data, 
-                    family = binomial,
-                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
-
-TwoByTwo = glmer(Corr ~ Memory * ChangeOccured * BlockType * PAS  * (1|ID) , 
+TwoByTwoPlusChangeOccured = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID), 
                  data, 
                  family = binomial,
                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
+TwoByTwoPlusTargetRadians = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians), 
+                                  data, 
+                                  family = binomial,
+                                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
+#TwoByTwoPlusTrialsOrder = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians) * (1|TrialsOrder), 
+#                                  data, 
+#                                  family = binomial,
+#                                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-summary(FourByTwo)
-summary(ThreeByTwo)
+#TwoByTwoNoMemory = glmer(Corr ~  BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians), 
+#                                data, 
+#                                family = binomial,
+#                                control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+
 summary(TwoByTwo)
+summary(TwoByTwoPlusTrialsOrder)
 
-stargazer(TwoByTwoPlusOrder, TwoByTwoPlus, TwoByTwo, ThreeByTwo, FourByTwo, btitle="Regression Results", align=TRUE, type="html")
+anova(TwoByTwo, TwoByTwoPlusChangeOccured)
+anova(TwoByTwoPlusChangeOccured, TwoByTwoPlusTargetRadians)
+#anova(TwoByTwoPlusTargetRadians, TwoByTwoPlusTrialsOrder)
+#anova(TwoByTwoPlusTargetRadians, TwoByTwoNoMemory)
+# ANOVA
+
+summary(aov(Setsize ~ Memory * BlockType * ChangeOccured *  PAS + Error(ID), data))
+
+stargazer(TwoByTwo, TwoByTwoPlusChangeOccured, TwoByTwoPlusTargetRadians,
+          align=TRUE, type="html")
 
 
