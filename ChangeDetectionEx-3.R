@@ -16,7 +16,9 @@ data2$PositionRadians <-data2$TargetPos / 8
 
 # Get Outliers
 
-lowerBoundOutlier = .25
+responseBias <- aggregate(Response ~ ID, data, mean)
+
+lowerBoundOutlier = .3
 upperBoundOutlier = 1
 
 CorrByConditionID = aggregate(Corr ~ ID * ConditionRecoded * Memory, data, mean)
@@ -39,6 +41,7 @@ data = data[!(is.element(data$ID, outliersIDs$ID)),]
 onlyChange = data[data$TypeOfChange != "NoChange",]
 
 # GLMM
+x <- sample(12)
 set.seed(77777777)
 TwoByTwo = glmer(Corr ~ Memory * TypeOfChange *  PAS  * (1|ID)+ (1|TargetRadians), 
                  onlyChange, 
