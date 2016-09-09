@@ -16,24 +16,11 @@ ScaleMax = 1
 data2$ScaledPAS = rescale(data2$PAS, to=c(ScaleMin, ScaleMax))
 data2$PositionRadians <-data2$TargetPos / 8
 
-# validate
-
-#str(data2)
-
-TrialsByCondition = aggregate(Trial ~ TypeOfChange, data2, length)
-TrialsByCondition
-
-IDbyCorr = aggregate(Corr ~ ID, data2, mean)
-dotplot(ID ~ Corr, IDbyCorr)
-
-PASbyID = aggregate(PAS ~ ID, data2, mean)
-dotplot(ID ~ PAS, PASbyID)
-
 # Get Outliers
 CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
 #outliers = RemoveOutliers(CorrByConditionID$Corr)
-lowerBoundOutlier = .5
-upperBoundOutlier = 0.95
+lowerBoundOutlier = .25
+upperBoundOutlier = 1
 CorrByConditionID = aggregate(Corr ~ ID + TypeOfChange, data2, mean)
 ggplot(CorrByConditionID, aes(Corr, TypeOfChange, Memory, colour=ID)) + 
   geom_line() + 
