@@ -1,19 +1,20 @@
 # configure R environment
 
 source("../OneDrive/Repos/Change Detection/Helper.R")
-Packages = c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms", "stargazer")
+Packages = c("lme4", "ggplot2", "lattice", "rio", "lmtest", "rms", "stargazer", "reshape")
 WorkingDirectory = "../OneDrive/Repos/Change Detection/Data"
 SetupEnvironment(workingDirectory = WorkingDirectory, requiredPackages = Packages)
 # read data
 
 data <- read.csv("CD_ex3_RAWdata - Long.csv", header = TRUE)
 
-# add variables
+# organize variables
 ScaleMin = 0
 ScaleMax = 1
-data2$ScaledPAS = rescale(data2$PAS, to=c(ScaleMin, ScaleMax))
-data2$PositionRadians <-data2$TargetPos / 8
+data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
+data$PositionRadians <-data$TargetPos / 8
 
+data <- rename(data, c(BlockType="ChangeType"))
 # Get Outliers
 
 responseBias <- aggregate(Response ~ ID, data, mean)
@@ -27,6 +28,7 @@ outliersData = data[(is.element(data$ID, outliersIDs$ID)),]
 outliersAnalysis = aggregate(Corr ~ ConditionRecoded * Memory * ID, outliersData, mean)
 
 
+# Plot Outliers
 ggplot(CorrByConditionID, aes(Corr,  Memory, colour=ID)) + 
   geom_line() + 
   geom_point() +
@@ -38,34 +40,59 @@ data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
 
 # GLMM
+basicModel = glmer(Corr ~  Memory * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+                 data, 
+                 family = binomial,
+                 control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+summary(basicModel)
 
-TwoByTwo = glmer(Corr ~  Memory * BlockType *  PAS  * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+basicModel2 = glmer(Corr ~  ChangeType * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+                   data, 
+                   family = binomial,
+                   control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+summary(basicModel2)
+
+basicModel3 = glmer(Corr ~  Memory * ChangeType * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+                    data, 
+                    family = binomial,
+                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+summary(basicModel3)
+anova(basicModel2, basicModel3)
+TwoByTwo = glmer(Corr ~  Memory * ChangeType *  PAS  * (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
                  data, 
                    family = binomial,
                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-TwoByTwoPlusChangeOccured = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID), 
+TwoByTwoPlusChangeOccured = glmer(Corr ~ Memory * ChangeType * ChangeOccured *  PAS  * (1|ID), 
                  data, 
                  family = binomial,
                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-TwoByTwoPlusTargetRadians = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians), 
+TwoByTwoPlusTargetRadians = glmer(Corr ~ Memory * ChangeType * ChangeOccured * PAS * (1|Memory/ID), 
                                   data, 
                                   family = binomial,
                                   control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-#TwoByTwoPlusTrialsOrder = glmer(Corr ~ Memory * BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians) * (1|TrialsOrder), 
+myModel = glmer(Corr ~ Memory * ChangeType * ChangeOccured * PAS +
+                  PAS:Memory:ChangeType +
+                  (1|Memory/ID),
+                #(1|ID) + (1|ID:Memory), 
+                                  data, 
+                                  family = binomial,
+                                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+summary(myModel)
+#TwoByTwoPlusTrialsOrder = glmer(Corr ~ Memory * ChangeType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians) * (1|TrialsOrder), 
 #                                  data, 
 #                                  family = binomial,
 #                                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
-#TwoByTwoNoMemory = glmer(Corr ~  BlockType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians), 
+#TwoByTwoNoMemory = glmer(Corr ~  ChangeType * ChangeOccured *  PAS  * (1|ID) * (1|TargetRadians), 
 #                                data, 
 #                                family = binomial,
 #                                control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 
 summary(TwoByTwo)
-summary(TwoByTwoPlusTrialsOrder)
+summary(TwoByTwoPlusTargetRadians)
 
 anova(TwoByTwo, TwoByTwoPlusChangeOccured)
 anova(TwoByTwoPlusChangeOccured, TwoByTwoPlusTargetRadians)
@@ -73,7 +100,7 @@ anova(TwoByTwoPlusChangeOccured, TwoByTwoPlusTargetRadians)
 #anova(TwoByTwoPlusTargetRadians, TwoByTwoNoMemory)
 # ANOVA
 
-summary(aov(Setsize ~ Memory * BlockType * ChangeOccured *  PAS + Error(ID), data))
+summary(aov(Setsize ~ Memory * ChangeType * ChangeOccured *  PAS + Error(ID), data))
 
 stargazer(TwoByTwo, TwoByTwoPlusChangeOccured, TwoByTwoPlusTargetRadians,
           align=TRUE, type="html")
