@@ -8,9 +8,9 @@ SetupEnvironment <- function(workingDirectory, requiredPackages)
 
 GetPackages <- function(PackageNames, repo = 'http://r.meteo.uni.wroc.pl/')
 {
-  packages.needed <- c(PackageNames)
-  new.packages <- packages.needed[!(packages.needed %in% installed.packages()[,"Package"])]
-  if(length(new.packages)) install.packages(new.packages, repos=repo)
+  if(any(!has)) install.packages(wants[!has])
+  has   <- wants %in% rownames(installed.packages())
+  if(any(!has)) install.packages(wants[!has], repos=repo)
 }
 
 RequirePackages <- function(PackageNames)
