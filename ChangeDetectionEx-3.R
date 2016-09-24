@@ -18,8 +18,12 @@ ScaleMin = 0
 ScaleMax = 1
 data$ScaledPAS = rescale(data$PAS, to=c(ScaleMin, ScaleMax))
 data$PositionRadians <-data$TargetPos / 8
-
 data <- rename(data, c(BlockType="ChangeType"))
+
+data$ID = as.factor(tolower(as.character(data$ID)))
+## Centrujemy na najni¿szym ratingu
+data$PAS = data$PAS - min(data$PAS)
+
 # Get Outliers
 
 responseBias <- aggregate(Response ~ ID, data, mean)
@@ -45,35 +49,30 @@ data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
 
 # GLMM
-mf = glmer(Corr ~ Memory * ChangeType + ChangeOccured +
-                     PAS:ChangeType +
-                     PAS:ChangeOccured +
-                     PAS:Memory +
-                     (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+mf = glmer(Corr ~ Memory * ChangeType + ChangeOccured + (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
                  data, 
                  family = binomial,
                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 summary(mf)
 
-mf2 = glmer(Corr ~ Memory * ChangeType + ChangeOccured +
-             PAS:ChangeType +
-             PAS:ChangeOccured +
-             PAS:Memory +
-             (PAS + ChangeType|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+mf2 = glmer(Corr ~ Memory * ChangeType +
+            
+             (ChangeType|ID), #* (1|TargetRadians) * (1|TrialsOrder)
            data, 
            family = binomial,
            control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 summary(mf2)
-
-anova(mf, mf2)
-
-mf3 = glmer(Corr ~ Memory + ChangeType + PAS + ChangeType:Memory  +
-                  (ChangeType | ID),
-                #(1|ID) + (1|ID:Memory), 
-                                  data, 
-                                  family = binomial,
-                                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
+mf3 = glmer(Corr ~ Memory * ChangeType * ChangeOccured +
+              
+              (ChangeType|ID), #* (1|TargetRadians) * (1|TrialsOrder)
+            data, 
+            family = binomial,
+            control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 summary(mf3)
+anova(mf2, mf3)
+
+summary((m = glmer(Corr ~  ChangeType *  Memory + (PAS |ID), data, family = binomial,
+                   control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))))
 
 summary(aov(PAS ~ Memory * ChangeType * ID, data))
 lf = (lmer(PAS ~ Memory + ChangeType + Setsize + Memory:ChangeType + (1|ID),  REML=FALSE, data = data))
