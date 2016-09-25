@@ -53,12 +53,14 @@ summary((m0 <- glmer(Corr ~ PAS * ChangeType * Memory +
                        (ChangeType + PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 anova(m0,m3)
-summary((m3 <- glmer(Corr ~ PAS * ChangeType +
-                       (ChangeType + PAS |ID),
+summary((m3 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured - PAS:ChangeType:ChangeOccured 
+                     + Memory:ChangeType + Memory  +
+                       (ChangeType+ PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 
-summary((m4 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured - PAS:ChangeType:ChangeOccured +
-                       (ChangeType + PAS |ID),
+summary((m4 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured - PAS:ChangeType:ChangeOccured 
+                     + Memory:ChangeType + Memory  +
+                       (ChangeType+ PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 
 anova(m3,m4)
