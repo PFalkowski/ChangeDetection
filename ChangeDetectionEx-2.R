@@ -41,9 +41,10 @@ summary(aov(Corr ~ ChangeType * ChangeOccured * PAS + Error(ID), data2))
 
 # GLMM
 
-mf1 = glmer(Corr ~ (1|ID) , 
+mf1 = glmer(Corr ~ PAS * ChangeType + (PAS|ID) , 
            data2, 
-           family = binomial)
+           family = binomial,
+           glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))
 summary(mf1)
 
 

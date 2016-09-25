@@ -49,15 +49,13 @@ data = data[!(is.element(data$ID, outliersIDs$ID)),]
 
 
 # GLMM
-mf = glmer(Corr ~ Memory * ChangeType + ChangeOccured + (1|ID) , #* (1|TargetRadians) * (1|TrialsOrder)
+mf = glmer(Corr ~ PAS * Memory * ChangeType + (PAS + ChangeType | ID) , #* (1|TargetRadians) * (1|TrialsOrder)
                  data, 
                  family = binomial,
                  control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
 summary(mf)
 
-mf2 = glmer(Corr ~ Memory * ChangeType +
-            
-             (ChangeType|ID), #* (1|TargetRadians) * (1|TrialsOrder)
+mf2 = glmer(Corr ~ PAS * ChangeType + (PAS + ChangeType | ID), #* (1|TargetRadians) * (1|TrialsOrder)
            data, 
            family = binomial,
            control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))
@@ -71,7 +69,7 @@ mf3 = glmer(Corr ~ Memory * ChangeType * ChangeOccured +
 summary(mf3)
 anova(mf2, mf3)
 
-summary((m = glmer(Corr ~  ChangeType *  Memory + (PAS |ID), data, family = binomial,
+summary((m = glmer(Corr ~  ChangeType *  Memory + (PAS + ChangeType |ID), data, family = binomial,
                    control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 100000)))))
 
 summary(aov(PAS ~ Memory * ChangeType * ID, data))
