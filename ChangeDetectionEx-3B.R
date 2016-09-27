@@ -53,18 +53,19 @@ summary((m0 <- glmer(Corr ~ PAS * ChangeType * Memory +
                        (ChangeType + PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 anova(m0,m3)
-summary((m3 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured - PAS:ChangeType:ChangeOccured 
-                     + Memory:ChangeType + Memory  +
+summary((m3 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured +
                        (ChangeType+ PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
+#save(m3, file = "CdEx3glmer")
 
-summary((m4 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured - PAS:ChangeType:ChangeOccured 
-                     + Memory:ChangeType + Memory  +
-                       (ChangeType+ PAS|ID),
+summary((m4 <- glmer(Corr ~  PAS * ChangeType * Memory +
+                       (Memory + PAS|ID),
                      df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 
 anova(m3,m4)
 summary((m4 <- glmer(Corr ~ PAS * ChangeType * ChangeOccured + Memory + (ChangeType + PAS |ID), df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
+
+summary((m7 <- glmer(Corr ~ PASF * ChangeType * Memory + (ChangeType |ID), df, family = 'binomial', control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun = 10000000)))))
 
 anova(m0,m3)
 df$fit = (model.matrix(m1) %*% fixef(m1))[,1]
